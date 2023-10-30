@@ -1,0 +1,137 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+df = pd.read_csv('sales_data_sample.csv', encoding='ISO-8859-1')
+df.head()
+
+df.dtypes
+RDERNUMBER           int64
+QUANTITYORDERED       int64
+PRICEEACH           float64
+ORDERLINENUMBER       int64
+SALES               float64
+ORDERDATE            object
+STATUS               object
+QTR_ID                int64
+MONTH_ID              int64
+YEAR_ID               int64
+PRODUCTLINE          object
+MSRP                  int64
+PRODUCTCODE          object
+CUSTOMERNAME         object
+PHONE                object
+ADDRESSLINE1         object
+ADDRESSLINE2         object
+CITY                 object
+STATE                object
+POSTALCODE           object
+COUNTRY              object
+TERRITORY            object
+CONTACTLASTNAME      object
+CONTACTFIRSTNAME     object
+DEALSIZE             object
+dtype: object
+
+df.isna().sum()
+ORDERNUMBER            0
+QUANTITYORDERED        0
+PRICEEACH              0
+ORDERLINENUMBER        0
+SALES                  0
+ORDERDATE              0
+STATUS                 0
+QTR_ID                 0
+MONTH_ID               0
+YEAR_ID                0
+PRODUCTLINE            0
+MSRP                   0
+PRODUCTCODE            0
+CUSTOMERNAME           0
+PHONE                  0
+ADDRESSLINE1           0
+ADDRESSLINE2        2521
+CITY                   0
+STATE               1486
+POSTALCODE            76
+COUNTRY                0
+TERRITORY           1074
+CONTACTLASTNAME        0
+CONTACTFIRSTNAME       0
+DEALSIZE               0
+dtype: int64
+
+df.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 2823 entries, 0 to 2822
+Data columns (total 25 columns):
+ #   Column            Non-Null Count  Dtype  
+---  ------            --------------  -----  
+ 0   ORDERNUMBER       2823 non-null   int64  
+ 1   QUANTITYORDERED   2823 non-null   int64  
+ 2   PRICEEACH         2823 non-null   float64
+ 3   ORDERLINENUMBER   2823 non-null   int64  
+ 4   SALES             2823 non-null   float64
+ 5   ORDERDATE         2823 non-null   object 
+ 6   STATUS            2823 non-null   object 
+ 7   QTR_ID            2823 non-null   int64  
+ 8   MONTH_ID          2823 non-null   int64  
+ 9   YEAR_ID           2823 non-null   int64  
+ 10  PRODUCTLINE       2823 non-null   object 
+ 11  MSRP              2823 non-null   int64  
+ 12  PRODUCTCODE       2823 non-null   object 
+ 13  CUSTOMERNAME      2823 non-null   object 
+ 14  PHONE             2823 non-null   object 
+ 15  ADDRESSLINE1      2823 non-null   object 
+ 16  ADDRESSLINE2      302 non-null    object 
+ 17  CITY              2823 non-null   object 
+ 18  STATE             1337 non-null   object 
+ 19  POSTALCODE        2747 non-null   object 
+...
+ 23  CONTACTFIRSTNAME  2823 non-null   object 
+ 24  DEALSIZE          2823 non-null   object 
+dtypes: float64(2), int64(7), object(16)
+memory usage: 551.5+ KB
+
+df_drop  = ['ADDRESSLINE1', 'ADDRESSLINE2', 'STATUS','POSTALCODE', 'CITY', 'TERRITORY', 'PHONE', 'STATE', 'CONTACTFIRSTNAME', 'CONTACTLASTNAME', 'CUSTOMERNAME', 'ORDERNUMBER']
+df = df.drop(df_drop, axis=1)
+
+df.head()
+	QUANTITYORDERED	PRICEEACH	ORDERLINENUMBER	SALES	ORDERDATE	QTR_ID	MONTH_ID	YEAR_ID	PRODUCTLINE	MSRP	PRODUCTCODE	COUNTRY	DEALSIZE
+0	30	95.70	2	2871.00	2/24/2003 0:00	1	2	2003	Motorcycles	95	S10_1678	USA	Small
+1	34	81.35	5	2765.90	5/7/2003 0:00	2	5	2003	Motorcycles	95	S10_1678	France	Small
+2	41	94.74	2	3884.34	7/1/2003 0:00	3	7	2003	Motorcycles	95	S10_1678	France	Medium
+3	45	83.26	6	3746.70	8/25/2003 0:00	3	8	2003	Motorcycles	95	S10_1678	USA	Medium
+4	49	100.00	14	5205.27	10/10/2003 0:00	4	10	2003	Motorcycles	95	S10_1678	USA	Medium
+
+## Data Preprocessing
+country = pd.get_dummies(df['COUNTRY'])
+productline = pd.get_dummies(df['PRODUCTLINE'])
+Dealsize = pd.get_dummies(df['DEALSIZE'])
+df = pd.concat([df,country,productline,Dealsize], axis = 1)
+df.head()
+df_drop  = ['COUNTRY','PRODUCTLINE','DEALSIZE']
+df = df.drop(df_drop, axis=1)
+df['PRODUCTCODE'] = pd.Categorical(df['PRODUCTCODE']).codes
+df.drop('ORDERDATE', axis=1, inplace=True)
+
+## Finding optimal number of datapoints using elbow method
+from sklearn.cluster import KMeans
+distortions = []
+K = range(1,10)
+for k in K:
+    kmeanModel = KMeans(n_clusters=k)
+    kmeanModel.fit(df)
+    distortions.append(kmeanModel.inertia_)
+
+plt.figure(figsize=(20,5))
+plt.plot(K, distortions, 'bx-')
+plt.xlabel('k')
+plt.ylabel('Distortion')
+plt.title('The Elbow Method showing the optimal k')
+plt.show()
+## Output : Image
+
+## Training and Testing the dataset
+kmeanModel = KMeans(n_clusters=3)
+y_kmeans = np.array(kmeanModel.fit_predict)
